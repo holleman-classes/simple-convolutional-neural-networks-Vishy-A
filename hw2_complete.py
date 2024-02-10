@@ -1,11 +1,13 @@
 ### Add lines to import modules as needed
 import tensorflow as tf
 from tensorflow import keras
+import numpy as np
 from sklearn.model_selection import train_test_split
 from tensorflow.keras import layers
 from tensorflow.keras import models
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import DepthwiseConv2D, Conv2D, BatchNormalization, MaxPooling2D, Flatten, Dense
+from PIL import Image
 ## 
 
 def build_model1():
@@ -97,7 +99,18 @@ def build_model3():
   return model
 
 def build_model50k():
-  model = None # Add code to define model 1.
+  model = Sequential([
+        
+        Conv2D(16, kernel_size=(3,3), activation='relu', strides=(2,2), input_shape = (32, 32, 3)),
+        BatchNormalization(),
+        Conv2D(32, kernel_size=(3,3), activation='relu', strides=(2,2)),
+        BatchNormalization(),
+        MaxPooling2D((2,2)),
+        Flatten(),
+        Dense(32, activation='relu'),
+        Dense(10, activation='softmax')
+    ])
+    
   return model
 
 # no training or dataset construction should happen above this line
@@ -107,6 +120,7 @@ if __name__ == '__main__':
   ## Add code here to Load the CIFAR10 data set
   (train_images_full, train_labels_full), (test_images, test_labels) = tf.keras.datasets.cifar10.load_data()
   train_images, val_images, train_labels, val_labels = train_test_split(train_images_full, train_labels_full, test_size=0.2, random_state=42)
+  classes = ['airplane','automobile','bird','cat','deer','dog','frog','horse','ship','truck']
   
   ########################################
   ## Build and train model 1
@@ -114,6 +128,13 @@ if __name__ == '__main__':
   # compile and train model 1.
   model1.compile(optimizer='adam',loss='sparse_categorical_crossentropy',metrics=['accuracy'])
   model1.fit(train_images, train_labels, epochs=50, validation_data=(val_images, val_labels))
+
+  image_path = "test_image_horse.jpg"
+  img = Image.open(image_path)
+  img = np.array(img) / 255.0
+  predict = model1.predict(np.expand_dims(img, axis=0))
+  print(predict)
+
   ## Build, compile, and train model 2 (DS Convolutions)
   model2 = build_model2()
   model2.compile(optimizer='adam',loss='sparse_categorical_crossentropy',metrics=['accuracy'])
@@ -124,3 +145,7 @@ if __name__ == '__main__':
   model3.compile(optimizer='adam',loss='sparse_categorical_crossentropy',metrics=['accuracy'])
   model3.fit(train_images, train_labels, epochs=50, validation_data=(val_images, val_labels))
   
+  model50k = build_model50k()
+  model50k.compile(optimizer='adam',loss='sparse_categorical_crossentropy',metrics=['accuracy'])
+  model50k.fit(train_images, train_labels, epochs=50, validation_data=(val_images, val_labels))
+  model50k.save("best_model.h5")
